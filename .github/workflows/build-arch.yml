@@ -20,7 +20,7 @@ jobs:
             alsa-lib avahi base-devel bzip2 chromaprint cmake curl \
             faad2 ffmpeg flac fftw hidapi jack2 lame libkeyfinder \
             libebur128 libmad libsamplerate libsndfile libusb libvorbis lilv \
-            mpg123 ninja opus portaudio protobuf qt6-5compat qt6-base \
+            mpg123 ninja opus portaudio portmidi protobuf qt6-5compat qt6-base \
             qt6-declarative qt6-multimedia qt6-svg qt6-tools qt6-webengine \
             rubberband sqlite taglib
 
