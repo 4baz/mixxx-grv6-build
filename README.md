@@ -118,7 +118,7 @@ docs/            developer notes and a screen-by-screen reference
 
 ## Building Mixxx
 
-The build runs on GitHub Actions (arm64 or x86_64, Debian trixie container): **Actions > Build Mixxx 2.5.0 stable 3 > Run workflow** or **Build Mixxx 2.5.0 stable 3 (x86_64) > Run workflow**. It fetches the Debian source package and applies [`patches/series-stable3`](patches/series-stable3). The arm64 workflow publishes the two `.deb` files as a release named `stable3-rN`; the x86_64 workflow uploads them as an artifact.
+The build runs on GitHub Actions (arm64 or x86_64, Debian trixie container): **Actions > Build Mixxx 2.5.0 stable 3 > Run workflow** or **Build Mixxx 2.5.0 stable 3 (x86_64) > Run workflow**. It fetches the Debian source package and applies [`patches/series-stable3`](patches/series-stable3). The arm64 workflow publishes the two `.deb` files as a release named `stable3-rN`; the x86_64 workflow uploads them as an artifact. **Build Mixxx 2.5.0 stable 3 (Arch Linux)** uses the same source and patches in an Arch Linux container and uploads an installable `mixxx-grv6-*.pkg.tar.zst`.
 
 | Build | Series | Version | State |
 |---|---|---|---|
