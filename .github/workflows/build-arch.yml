@@ -1,0 +1,81 @@
+name: Build Mixxx 2.5.0 "stable 3" (Arch Linux x86_64)
+
+# Build the Debian source package in an Arch Linux environment. Debian's own
+# patches are applied first because the GRV6 patches are based on that tree.
+# Run it by hand: Actions tab -> "Build Mixxx 2.5.0 stable 3 (Arch Linux)".
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+    container: archlinux:latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install build tools and dependencies
+        run: |
+          pacman -Syu --noconfirm
+          pacman -S --needed --noconfirm \
+            alsa-lib avahi base-devel bzip2 chromaprint cmake curl \
+            faad2 ffmpeg flac fftw hidapi jack2 lame libkeyfinder \
+            libmad libsamplerate libsndfile libusb libvorbis lilv \
+            mpg123 ninja opus portaudio protobuf qt6-5compat qt6-base \
+            qt6-declarative qt6-multimedia qt6-svg qt6-tools qt6-webengine \
+            rubberband sqlite taglib
+
+      - name: Fetch source and apply patches
+        run: |
+          mkdir -p /build
+          cd /build
+          curl -fLO https://deb.debian.org/debian/pool/main/m/mixxx/mixxx_2.5.0+dfsg.orig.tar.xz
+          curl -fLO https://deb.debian.org/debian/pool/main/m/mixxx/mixxx_2.5.0+dfsg-3.debian.tar.xz
+          tar -xf mixxx_2.5.0+dfsg.orig.tar.xz
+          tar -xf mixxx_2.5.0+dfsg-3.debian.tar.xz
+          cd mixxx-2.5.0
+
+          while read -r patch_file; do
+            [ -z "$patch_file" ] && continue
+            echo "=== Debian: $patch_file"
+            patch -p1 < "../debian/patches/$patch_file"
+          done < <(awk '!/^#/ && NF {print $1}' ../debian/patches/series)
+
+          while read -r patch_file; do
+            echo "=== GRV6: $patch_file"
+            patch -p1 < "$GITHUB_WORKSPACE/patches/$patch_file.patch"
+          done < "$GITHUB_WORKSPACE/patches/series-stable3"
+
+      - name: Build and stage package
+        run: |
+          cd /build/mixxx-2.5.0
+          cmake -S . -B build -G Ninja \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DCMAKE_INSTALL_PREFIX=/usr \
+            -DTESTING=OFF
+          cmake --build build --parallel "$(nproc)"
+          DESTDIR=/build/stage cmake --install build
+
+      - name: Create Arch package
+        run: |
+          mkdir -p /build/package
+          cat > /build/package/PKGBUILD <<'EOF'
+          pkgname=mixxx-grv6
+          pkgver=2.5.0
+          pkgrel=${GITHUB_RUN_NUMBER}
+          pkgdesc='Mixxx 2.5.0 with the GRV6 patches'
+          arch=('x86_64')
+          license=('GPL-2.0-or-later')
+          depends=('qt6-base' 'qt6-svg' 'sqlite')
+
+          package() {
+            cp -a /build/stage/. "$pkgdir/"
+          }
+          EOF
+          cd /build/package
+          makepkg --noconfirm --nodeps --force
+
+      - name: Upload Arch package
+        uses: actions/upload-artifact@v4
+        with:
+          name: mixxx-stable3-arch-x86_64
+          path: /build/package/*.pkg.tar.zst
